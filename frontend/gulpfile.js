@@ -5,9 +5,11 @@ var
     watch = require('gulp-watch'), // следим за изменениями файлов
     // pug = require('gulp-pug'), //шаблонизатор pug
     prefixer = require('gulp-autoprefixer'), // автопрефиксы
+    gcmq = require('gulp-group-css-media-queries'), //группирует медиа запросы
     uglify = require('gulp-uglify'), // минификация js
     sass = require('gulp-sass'), // работа с препроцессором SCSS
     csso = require('gulp-csso'), // Минификация CSS-файлов
+    sassGlob = require('gulp-sass-glob'), // Импортирует все scss файлы в один
     imagemin = require('gulp-imagemin'), // сжимаем изображения
     pngquant = require('imagemin-pngquant'), // дополнения к предыдущему плагину, для работы с PNG
     rimraf = require('rimraf'), //rm -rf для ноды
@@ -74,10 +76,15 @@ gulp.task('js:build', function() {
 // собираем стили
 gulp.task('style:build', function() {
     gulp.src(path.src.style)
+        .pipe(sassGlob())
         .pipe(sass({
             errLogToConsole: true
         }))
-        .pipe(prefixer())
+        .pipe(prefixer({
+          browsers: ['last 2 versions'], //версии поддерживаемых браузеров
+          cascade: false
+        }))
+        .pipe(gcmq())
         .pipe(csso())
         .pipe(gulp.dest(path.build.css))
         .pipe(reload({ stream: true }));

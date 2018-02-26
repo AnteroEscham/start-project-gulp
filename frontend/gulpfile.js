@@ -3,15 +3,18 @@
 var
     gulp = require('gulp'),
     watch = require('gulp-watch'), // следим за изменениями файлов
-    // pug = require('gulp-pug'), //шаблонизатор pug
+    pug = require('gulp-pug'), //шаблонизатор pug
     prefixer = require('gulp-autoprefixer'), // автопрефиксы
     gcmq = require('gulp-group-css-media-queries'), //группирует медиа запросы
     uglify = require('gulp-uglify'), // минификация js
+    babel = require('gulp-babel'), //Babel - ES6 в браузерах для динозавров
+    env = require('babel-preset-env'), //Подключаем плагин babel
     sass = require('gulp-sass'), // работа с препроцессором SCSS
     csso = require('gulp-csso'), // Минификация CSS-файлов
     sassGlob = require('gulp-sass-glob'), // Импортирует все scss файлы в один
     imagemin = require('gulp-imagemin'), // сжимаем изображения
     pngquant = require('imagemin-pngquant'), // дополнения к предыдущему плагину, для работы с PNG
+    plumber = require('gulp-plumber'), //Обрабатываем ошибки без остановки процесса
     rimraf = require('rimraf'), //rm -rf для ноды
     browserSync = require("browser-sync"), // локальный dev сервер с livereload, так же с его помощью мы сможем сделать тунель на наш localhost
     reload = browserSync.reload;
@@ -26,15 +29,14 @@ var path = {
         fonts: '../build/fonts/'
     },
     src: { //исходники
-        // pug: '../src/templates/*.pug',
-        html: '../src/*.html',
+        pug: '../src/templates/*.pug',
         js: '../src/js/*.js',
         style: '../src/style/style.scss',
         img: ['../src/img/**/*.*', '!../src/img/sprite.svg'],
         fonts: '../src/fonts/**/*.*'
     },
     watch: { //отслеживание
-        // pug: '../src/**/*.pug',
+        pug: '../src/**/*.pug',
         js: '../src/js/**/*.js',
         html: '../src/*.html',
         style: '../src/style/**/*.scss',
@@ -57,10 +59,9 @@ var config = {
 
 //обрабатываем html
 gulp.task('html:build', function() {
-    // gulp.src(path.src.pug)
-    //     .pipe(pug())
-    //     .pipe(gulp.dest(path.build.html))
-      gulp.src(path.src.html)
+    gulp.src(path.src.pug)
+        .pipe(plumber())
+        .pipe(pug())
         .pipe(gulp.dest(path.build.html))
         .pipe(reload({ stream: true }));
 });
@@ -68,6 +69,10 @@ gulp.task('html:build', function() {
 //обрабатываем js
 gulp.task('js:build', function() {
     gulp.src(path.src.js)
+        .pipe(plumber())
+        .pipe(babel({
+            presets: [env]
+        }))
         .pipe(uglify())
         .pipe(gulp.dest(path.build.js))
         .pipe(reload({ stream: true }));
@@ -76,6 +81,7 @@ gulp.task('js:build', function() {
 // собираем стили
 gulp.task('style:build', function() {
     gulp.src(path.src.style)
+        .pipe(plumber())
         .pipe(sassGlob())
         .pipe(sass({
             errLogToConsole: true
@@ -93,6 +99,7 @@ gulp.task('style:build', function() {
 //собираем изображения
 gulp.task('image:build', function() {
     gulp.src(path.src.img)
+        .pipe(plumber())
         .pipe(imagemin({
             progressive: true,
             svgoPlugins: [{ removeViewBox: false }],
@@ -121,12 +128,8 @@ gulp.task('build', [
 ]);
 
 //отслеживание изменений
-// gulp.task('watch', function() {
-//     watch([path.watch.pug], function(event, cb) {
-//         gulp.start('html:build');
-//     });
 gulp.task('watch', function() {
-    watch([path.watch.html], function(event, cb) {
+    watch([path.watch.pug], function(event, cb) {
         gulp.start('html:build');
     });
     watch([path.watch.style], function(event, cb) {

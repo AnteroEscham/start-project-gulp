@@ -1,0 +1,1 @@
+"use strict";var info=function(){return console.info("jacascript detected")};info();var obj={one:3,two:8},one=obj.one,two=obj.two;
